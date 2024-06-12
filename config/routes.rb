@@ -5,5 +5,5 @@ Rails.application.routes.draw do
   # root "articles#index"
   root "pokers#index"
 
-  resources :poker
+  get "/pokers/show_json", to: "pokers#show_json"
 end

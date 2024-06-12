@@ -1,0 +1,2 @@
+class PokerCombination < ApplicationRecord
+end
