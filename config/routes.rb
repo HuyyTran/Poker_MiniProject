@@ -5,5 +5,6 @@ Rails.application.routes.draw do
   # root "articles#index"
   root "pokers#index"
 
+  get "/pokers/index", to: "pokers#index"
   get "/pokers/show_json", to: "pokers#show_json"
 end
