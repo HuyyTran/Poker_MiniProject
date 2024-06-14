@@ -37,5 +37,36 @@ RSpec.describe PokersController, type: :controller do
                 include_examples "valid poker hand", valid_case[:cards], valid_case[:result]
             end
         end
+
+        context "with invalid poker hand" do 
+            invalid_cases = [
+                # Invalid card length
+                { cards: "H1 H13 H12 H11", error: "Invalid card's length" },
+                { cards: "H1 H13 H12 H11 H10 H9", error: "Invalid card's length" },
+        
+                # Invalid suit
+                { cards: "Z1 H13 H12 H11 H10", error: "Invalid suit" },
+                { cards: "H1 H13 H12 H11 X10", error: "Invalid suit" },
+                { cards: "C1 C13 C12 C11 Z10", error: "Invalid suit" },
+        
+                # Invalid number
+                { cards: "H14 H13 H12 H11 H10", error: "Invalid number" },
+                { cards: "H0 H13 H12 H11 H10", error: "Invalid number" },
+                { cards: "C14 C13 C12 C11 C10", error: "Invalid number" },
+        
+                # Duplicate cards
+                { cards: "H1 H1 H12 H11 H10", error: "Duplicate cards" },
+                { cards: "D2 H13 H12 H11 D2", error: "Duplicate cards" },
+                { cards: "C1 C1 C12 C11 C10", error: "Duplicate cards" },
+        
+                # Nil input
+                { cards: "", error: "input is nil" },
+                { cards: nil, error: "input is nil" },
+              ]
+
+            invalid_cases.each do |invalid_case|
+                include_examples "invalid poker hand", invalid_case[:cards], invalid_case[:error]
+            end
+        end
     end
 end

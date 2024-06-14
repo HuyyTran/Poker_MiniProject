@@ -9,7 +9,7 @@ end
 RSpec.shared_examples "invalid poker hand" do |cards, expected_error|
 
     it "returns an corresponding message" do 
-        post :checck, params: {cards: cards}
+        post :check, params: {cards: cards}
         expect(response).to redirect_to(action: :index)
         expect(flash[:error]).to eq(expected_error)
     end
