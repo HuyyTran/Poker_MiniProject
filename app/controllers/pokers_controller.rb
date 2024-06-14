@@ -57,23 +57,31 @@ class PokersController < ApplicationController
   end
 
   def check_all_hands(cards,web_flag)
+    # cards: List[str]
+    # card: str
     result=[]
-
+    # result: List[Card_obj]
     for card in cards      
       result.push(check_poker_hand(card))
     end
     # find the best hand
     best_hand={}
-    min=9
-    for item in result
-      if item['score']<min
+    
+    result_arr=[] # List[[score,card_obj]]
+    result.each do |item|
+      if item['score']==min
+        result_arr.push([item['score'],item])
+      elsif item['score']<min
         min=item['score']
+        result_arr=[]
+        result_arr.push([item['score'],item])
       end
     end
+    
     for i in 0..(result.length-1)
       if result[i]['score']==min
-        result[i]['best']=true
-        best_hand=result[i]["hand"]
+        # result[i]['best']=true
+        # best_hand=result[i]["hand"]
       else
         result[i]['best']=false
       end
@@ -89,6 +97,10 @@ class PokersController < ApplicationController
   end
 
   def check_poker_hand(card)
+    #use later for checking
+    one_pair_num=-1
+    # card: str
+    # return single_resutl: Dict{cards:str,score:int,score2:List[int],best:bool,hand:str} ->Card_obj
     single_result={}
     single_result['card']=card
 
@@ -99,8 +111,12 @@ class PokersController < ApplicationController
       array[i]=[array[i][0],array[i][1..-1].to_i]
     end
     array=array.sort { |a, b| a[1] <=> b[1] }
+
+    #array: List[tuple[suit,number]]. ex: array = [['H',1],['H',10],['H',11],['H',12],['H',13]]. This array is already sorted in ascending order.
     # print(az_set)
     print(array,"\n")
+
+    # flag_hash: Dict. -> to check card is in which type.
     flag_hash={}
     # 8.one pair
     # structure of flag_hash['dup']: 
@@ -127,7 +143,9 @@ class PokersController < ApplicationController
         if flag_hash['dup'][key]==1
           flag_hash['dup'][key]=2
           flag_hash[8].add(key)
+          one_pair_num=key
         elsif flag_hash['dup'][key]==3
+          # print("key: ",key,"------\n")
           flag_hash[6]=key
         elsif flag_hash['dup'][key]==6 or flag_hash['dup'][key]==10
           flag_hash['dup'][key]=4
@@ -159,14 +177,17 @@ class PokersController < ApplicationController
         break
       end
     end
+
+    # ace-high special case:1-10-11-12-13
+    if array[0][1]==1 and array[1][1]==10 and array[2][1]==11 and array[3][1]==12 and array[4][1]==13
+      straight_flag=true
+    end
+
     if straight_flag
       flag_hash[5]=1
     end
 
-      # ace-high special case:1-10-11-12-13
-    if array[0][1]==1 and array[1][1]==10 and array[2][1]==11 and array[3][1]==12 and array[4][1]==13
-      straight_flag=true
-    end
+
 
     # 4.flush
     flush_flag=true
@@ -193,7 +214,7 @@ class PokersController < ApplicationController
 
     # 1.straight flush
     if flush_flag and straight_flag
-      flag_hash[1]=1
+      flag_hash[1]=1      
     end
 
     # 9. high card
@@ -210,31 +231,80 @@ class PokersController < ApplicationController
     case result
     when 1
       hand='straight flush'
+      single_result['score2']=[array[4][1]]
     when 2
       hand='four of a kind'
+      single_result['score2']=[array[2][1]]
+      if array[2][1]==array[0][1]
+        single_result['score2'].push(array[4][1])
+      else
+        single_result['score2'].push(array[0][1])
+      end
     when 3 
       hand='full house'
+      single_result['score2']=[array[2][1]]
+      if array[2][1]==array[0][1]
+        single_result['score2'].push(array[4][1])
+      else
+        single_result['score2'].push(array[0][1])
+      end
+
     when 4
       hand='flush'
+      single_result['score2']=[]
+      4.downto(0) do |i|
+        single_result['score2'].push(array[i][1])
+      end
     when 5
       hand='straight'
+      single_result['score2']=[array[4][1]]
     when 6
       hand='three of a kind'
+      toak_num=array[2][1] #number in three of a kind
+      single_result['score2']=[toak_num]
+      if toak_num==array[0][1]
+        single_result['score2'].push(array[4][1])
+        single_result['score2'].push(array[3][1])
+      else
+        single_result['score2'].push(array[1][1])
+        single_result['score2'].push(array[0][1])
+      end
     when 7
       hand='two pairs'
+      #3 cases:
+      
+      if array[0][1]!=array[1][1]
+        # 7.1: a-aa-aa
+        single_result['score2']=[array[4][1],array[2][1],array[0][1]]
+      elsif
+        # 7.2: aa-a-aa
+        single_result['score2']=[array[4][1],array[0][1],array[2][1]]
+      elsif
+        # 7.3: aa-aa-a
+        single_result['score2']=[array[2][1],array[0][1],array[4][1]]
+      end 
+      
     when 8
       hand='one pair'
+      single_result['score2']=[one_pair_num]
+      4.downto(0) do |i|
+        if array[i][1]!=one_pair_num
+          single_result['score2'].push(array[i][1])
+        end
+      end
     when 9
       hand='high card'
+      single_result['score2']=[]
+      4.downto(0) do |i|
+        single_result['score2'].push(array[i][1])        
+      end
     end
     puts(hand)
-    single_result['score']=result
-    if result==1
-      single_result['best']=true
-    else
-      single_result['best']=false
-    end
 
+    #single_result['score'] -> ranking card in cards
+    # if 2 or more cards have the same 'score', the use single_result['score2'] to find the best hand among them
+    single_result['score']=result
+    single_result['best']=false
     single_result['hand']=hand
     return single_result
   end
