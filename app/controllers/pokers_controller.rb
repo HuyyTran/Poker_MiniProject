@@ -46,9 +46,10 @@ class PokersController < ApplicationController
 
     print(cards)
     result=check_all_hands(cards,web_flag)
-    print("result: ",@result,"\n")
+    # print("result: ",@result,"\n")
     if web_flag==1
       flash[:result] = result
+      print("flash[:result]: ",flash[:result],"\n")
       redirect_to action: :index
     end
     
