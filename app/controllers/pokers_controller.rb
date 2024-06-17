@@ -87,7 +87,7 @@ class PokersController < ApplicationController
         result_arr.push(item['score2'])
       elsif item['score']<min
         min=item['score']
-        result_arr=[]
+        result_arr.clear
         result_arr.push(item['score2'])
       end
     end
@@ -99,7 +99,7 @@ class PokersController < ApplicationController
 
     # set best=true to the best hand(s) 
     result.each do |item|
-      if item['score2']==best_score
+      if item['score2']==best_score and item['score']==min
         item['best']=true
         best_hand=item
       end
