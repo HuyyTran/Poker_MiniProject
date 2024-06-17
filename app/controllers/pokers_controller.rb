@@ -24,31 +24,38 @@ class PokersController < ApplicationController
     # handle HTML request
     if !cards.is_a?(Array)
       web_flag=1
-      cards=[cards]
+      cards=cards.split(',')
     end
 
     # Validate cards
-    err=""
-    err=valid_cards(cards)
-    print("err: ",err,"\n")
+    validated_cards=valid_cards(cards)
+    print("validated_card: ",validated_cards[0]," ; ",validated_cards[1],"\n")
     # print("valid test: ",valid_cards(cards),"\n")
     # print("cards: ",cards,"\n")
-    if err!=""      
-      flash[:error] = err     
-      if web_flag==0
-        err_obj={"error":err}
-        render json: err_obj
-        return
-      elsif web_flag==1
-        redirect_to action: :index and return
-      end
-    end
 
+    # old version
+    # if err!=""      
+    #   flash[:error] = err     
+    #   if web_flag==0
+    #     err_obj={"error":err}
+    #     render json: err_obj
+    #     return
+    #   elsif web_flag==1
+    #     redirect_to action: :index and return
+    #   end
+    # end
+
+    # now only need to handle the case error for web interface
+    if validated_cards[1] and web_flag==1
+      flash[:error]=validated_cards[0][0][1]
+      redirect_to action: :index and return
+    end
     print(cards)
-    result=check_all_hands(cards,web_flag)
+    # result=check_all_hands(cards,web_flag)
+    result=check_all_hands(validated_cards[0],web_flag)
     # print("result: ",@result,"\n")
     if web_flag==1
-      flash[:result] = result
+      flash[:result] = "Card: "+result['card']+" =>> Hand: "+result['hand']
       print("flash[:result]: ",flash[:result],"\n")
       redirect_to action: :index
     end
@@ -57,36 +64,44 @@ class PokersController < ApplicationController
   end
 
   def check_all_hands(cards,web_flag)
-    # cards: List[str]
-    # card: str
+    # cards: List[tuple(card: str, err:str)]
+    # card: tuple(card: str, err:str)
     result=[]
     # result: List[Card_obj]
-    for card in cards      
-      result.push(check_poker_hand(card))
+    for card in cards    
+      result.push(check_poker_hand(card[0],card[1]))
     end
     # find the best hand
+
+    # 1. fisrt filter, choose those have score==min and push them to result_arr
     best_hand={}
-    
-    result_arr=[] # List[[score,card_obj]]
+    min=9
+    result_arr=[] # List[score2]=List[List[int]]
     result.each do |item|
+      if item.has_key?("error")
+        next
+      end
       if item['score']==min
-        result_arr.push([item['score'],item])
+        result_arr.push(item['score2'])
       elsif item['score']<min
         min=item['score']
         result_arr=[]
-        result_arr.push([item['score'],item])
+        result_arr.push(item['score2'])
       end
     end
+    # print("result_arr: ",result_arr)
     
-    for i in 0..(result.length-1)
-      if result[i]['score']==min
-        # result[i]['best']=true
-        # best_hand=result[i]["hand"]
-      else
-        result[i]['best']=false
+    # 2. 2nd filter: choose the best hand in result_arr base on score2
+    best_score=result_arr.max # List[int]
+    # print("best: ",best_score)
+
+    # set best=true to the best hand(s) 
+    result.each do |item|
+      if item['score2']==best_score
+        item['best']=true
+        best_hand=item
       end
     end
-    
 
     if web_flag==0
       result_obj={"result":result}
@@ -96,26 +111,33 @@ class PokersController < ApplicationController
 
   end
 
-  def check_poker_hand(card)
+  def check_poker_hand(card,err)
     #use later for checking
     one_pair_num=-1
     # card: str
     # return single_resutl: Dict{cards:str,score:int,score2:List[int],best:bool,hand:str} ->Card_obj
     single_result={}
     single_result['card']=card
-
+    if err!="none"
+      single_result['error']=err
+      return single_result
+    end
     array=card.split(" ")
 
     # modify the hand array
+    # turn 1 into 14
     for i in 0..(array.length-1)
       array[i]=[array[i][0],array[i][1..-1].to_i]
+      if array[i][1]==1
+        array[i][1]=14
+      end
     end
+    
     array=array.sort { |a, b| a[1] <=> b[1] }
-
+    # single_result['modified_card']=array
     #array: List[tuple[suit,number]]. ex: array = [['H',1],['H',10],['H',11],['H',12],['H',13]]. This array is already sorted in ascending order.
     # print(az_set)
     print(array,"\n")
-
     # flag_hash: Dict. -> to check card is in which type.
     flag_hash={}
     # 8.one pair
@@ -178,11 +200,16 @@ class PokersController < ApplicationController
       end
     end
 
-    # ace-high special case:1-10-11-12-13
-    if array[0][1]==1 and array[1][1]==10 and array[2][1]==11 and array[3][1]==12 and array[4][1]==13
+    # ace-high special case:1-10-11-12-13 (ignore this case)
+    # ace-low special case: 2-3-4-5-14. Turn into 1-2-3-4-5
+    if array[0][1]==2 and array[1][1]==3 and array[2][1]==4 and array[3][1]==5 and array[4][1]==14
       straight_flag=true
+      array[0][1]=1 
+      array[1][1]=2 
+      array[2][1]=3 
+      array[3][1]=4 
+      array[4][1]=5
     end
-
     if straight_flag
       flag_hash[5]=1
     end
@@ -312,7 +339,9 @@ class PokersController < ApplicationController
   private
   
   def valid_cards(cards)
-    print("cards: ",cards,"\n")
+    # cards: List[str]
+    exist_err=false
+    print("cardsss: ",cards,"\n")
     az_array = ["C","D","H","S",'c']
     az_set=Set.new(az_array)
     num_array = (1..13).to_a
@@ -321,41 +350,60 @@ class PokersController < ApplicationController
     if cards==[""]
       return "input is nil"
     end
-
+    result=[] #result : List [tuple(card:str, err:str)]
+    repeat_set=Set.new
     cards.each do |item|
+      wrong_flag=false
       card=item.split(" ")
+      # card = List[str]
       # modify the hand array
       for i in 0..(card.length-1)
         card[i]=[card[i][0],card[i][1..-1].to_i]
       end
 
+      # card=List[tuple(suit:str, number: int)]
       #invalid card's length
       if card.length!=5
-        return "Invalid card's length"
+        result.push([item,"Invalid card's length"])
+        wrong_flag=true
+        exist_err=true
+        next 
       end
-
       dup_set=Set.new
       #invalid Character
       card.each do |single_card|
         #invalid suit
         if !az_set.include?(single_card[0])
-          return "Invalid suit"
+          result.push([item,"Invalid suit"])
+          wrong_flag=true
+          break
         end
         # invalid number
         if !num_set.include?(single_card[1])
-          return "Invalid number"
+          result.push([item,"Invalid number"])
+          wrong_flag=true
+          break
         end        
 
-        #duplicate cards
-        if dup_set.include?(single_card)
-          return "Duplicate cards"
+        #repeated cards
+        evaluated_card=single_card[0]+single_card[1].to_s
+        if repeat_set.include?(evaluated_card)
+          result.push([item,"Repeated cards: "+evaluated_card])
+          wrong_flag=true
+          break
         else
-          dup_set.add(single_card)
+          repeat_set.add(evaluated_card)
         end
-
       end   
 
+
+      if !wrong_flag
+        result.push([item,"none"])
+      else
+        exist_err=true
+      end
+
     end
-    return ""
+    return [result,exist_err]
   end
 end
