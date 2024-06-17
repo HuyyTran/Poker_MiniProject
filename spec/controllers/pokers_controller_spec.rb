@@ -55,9 +55,9 @@ RSpec.describe PokersController, type: :controller do
                 { cards: "C14 C13 C12 C11 C10", error: "Invalid number" },
         
                 # Duplicate cards
-                { cards: "H1 H1 H12 H11 H10", error: "Duplicate cards" },
-                { cards: "D2 H13 H12 H11 D2", error: "Duplicate cards" },
-                { cards: "C1 C1 C12 C11 C10", error: "Duplicate cards" },
+                { cards: "H1 H1 H12 H11 H10", error: "Repeated cards: H1" },
+                { cards: "D2 H13 H12 H11 D2", error: "Repeated cards: D2" },
+                { cards: "C1 C1 C12 C11 C10", error: "Repeated cards: C1" },
         
                 # Nil input
                 { cards: "", error: "input is nil" },

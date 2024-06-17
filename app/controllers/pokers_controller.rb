@@ -47,6 +47,7 @@ class PokersController < ApplicationController
 
     # now only need to handle the case error for web interface
     if validated_cards[1] and web_flag==1
+      print("test print: ",validated_cards,"\n")
       flash[:error]=validated_cards[0][0][1]
       redirect_to action: :index and return
     end
@@ -55,7 +56,8 @@ class PokersController < ApplicationController
     result=check_all_hands(validated_cards[0],web_flag)
     # print("result: ",@result,"\n")
     if web_flag==1
-      flash[:result] = "Card: "+result['card']+" =>> Hand: "+result['hand']
+      # flash[:result] = "Card: "+result['card']+" =>> Hand: "+result['hand']
+      flash[:result]=result['hand']
       print("flash[:result]: ",flash[:result],"\n")
       redirect_to action: :index
     end
@@ -346,11 +348,16 @@ class PokersController < ApplicationController
     az_set=Set.new(az_array)
     num_array = (1..13).to_a
     num_set=Set.new(num_array)
-    # nil input
-    if cards==[""]
-      return "input is nil"
-    end
     result=[] #result : List [tuple(card:str, err:str)]
+    # nil input
+    if cards==[""] || cards.empty?
+      # return "input is nil"
+      # result.push(["","input is nil"])
+      cards=[""]
+      exist_err=true
+      # return [[["","input is nil"]],true]
+    end
+    
     repeat_set=Set.new
     cards.each do |item|
       wrong_flag=false
@@ -362,6 +369,15 @@ class PokersController < ApplicationController
       end
 
       # card=List[tuple(suit:str, number: int)]
+      # nil input
+
+      if item==""
+        result.push([item,"input is nil"])
+        wrong_flag=true
+        exist_err=true
+        next
+      end
+
       #invalid card's length
       if card.length!=5
         result.push([item,"Invalid card's length"])
@@ -404,6 +420,7 @@ class PokersController < ApplicationController
       end
 
     end
+    print("valid test ", result," ",exist_err,"\n")
     return [result,exist_err]
   end
 end
