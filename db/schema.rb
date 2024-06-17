@@ -10,13 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_06_12_100153) do
-  create_table "poker_combinations", force: :cascade do |t|
-    t.string "card"
-    t.string "hand"
-    t.boolean "best"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+ActiveRecord::Schema[7.0].define(version: 20_240_612_100_153) do
+  create_table 'poker_combinations', force: :cascade do |t|
+    t.string 'card'
+    t.string 'hand'
+    t.boolean 'best'
+    t.datetime 'created_at', null: false
+    t.datetime 'updated_at', null: false
   end
-
 end
