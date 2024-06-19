@@ -5,7 +5,17 @@ class PokersController < ApplicationController
 
   before_action :validate_content_type, only: :check
 
-  # rescue_from ActionController::UnknownHttpMethod, with: :handle_unsupported_http_method
+  HAND = {
+    straight_flush: 1,
+    four_of_a_kind: 2,
+    full_house: 3,
+    flush: 4,
+    straight: 5,
+    three_of_a_kind: 6,
+    two_pairs: 7,
+    one_pair: 8,
+    high_card: 9
+  }.freeze
 
   def index
     @pokers = PokerCombination.all
@@ -235,10 +245,10 @@ class PokersController < ApplicationController
     end
 
     case result
-    when 1
+    when HAND[:straight_flush]
       hand = 'straight flush'
       single_result['score2'] = [array[4][1]]
-    when 2
+    when HAND[:four_of_a_kind]
       hand = 'four of a kind'
       single_result['score2'] = [array[2][1]]
       if array[2][1] == array[0][1]
@@ -246,7 +256,7 @@ class PokersController < ApplicationController
       else
         single_result['score2'].push(array[0][1])
       end
-    when 3
+    when HAND[:full_house]
       hand = 'full house'
       single_result['score2'] = [array[2][1]]
       if array[2][1] == array[0][1]
@@ -255,16 +265,16 @@ class PokersController < ApplicationController
         single_result['score2'].push(array[0][1])
       end
 
-    when 4
+    when HAND[:flush]
       hand = 'flush'
       single_result['score2'] = []
       4.downto(0) do |i|
         single_result['score2'].push(array[i][1])
       end
-    when 5
+    when HAND[:straight]
       hand = 'straight'
       single_result['score2'] = [array[4][1]]
-    when 6
+    when HAND[:three_of_a_kind]
       hand = 'three of a kind'
       toak_num = array[2][1] # number in three of a kind
       single_result['score2'] = [toak_num]
@@ -275,7 +285,7 @@ class PokersController < ApplicationController
         single_result['score2'].push(array[1][1])
         single_result['score2'].push(array[0][1])
       end
-    when 7
+    when HAND[:two_pairs]
       hand = 'two pairs'
       # 3 cases:
 
@@ -288,13 +298,13 @@ class PokersController < ApplicationController
         # 7.3: aa-aa-a
       end
 
-    when 8
+    when HAND[:one_pair]
       hand = 'one pair'
       single_result['score2'] = [one_pair_num]
       4.downto(0) do |i|
         single_result['score2'].push(array[i][1]) if array[i][1] != one_pair_num
       end
-    when 9
+    when HAND[:high_card]
       hand = 'high card'
       single_result['score2'] = []
       4.downto(0) do |i|
@@ -418,7 +428,7 @@ class PokersController < ApplicationController
 
   def validate_content_type
     unless ['application/x-www-form-urlencoded', 'multipart/form-data',
-            'application/json'].include?(request.content_type)
+            'application/json', 'application/x-www-form-urlencoded;charset=UTF-8'].include?(request.content_type)
       if request.content_type == 'application/json'
         render json: { error: "The provided content-type '#{request.content_type}' is not supported." },
                status: :unsupported_media_type
