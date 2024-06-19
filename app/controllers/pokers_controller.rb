@@ -2,7 +2,7 @@ require 'set'
 
 class PokersController < ApplicationController
   protect_from_forgery with: :null_session, only: :check
-  
+
   before_action :validate_content_type, only: :check
 
   # rescue_from ActionController::UnknownHttpMethod, with: :handle_unsupported_http_method
@@ -26,8 +26,9 @@ class PokersController < ApplicationController
     cards = params[:cards] # cards: List[str]
     # Validate if cards parameter is a string or an array of strings
     unless cards.is_a?(String) || (cards.is_a?(Array) && cards.all? { |c| c.is_a?(String) })
-      render json: { error: "invalid cards" }, status: :unprocessable_entity and return
+      render json: { error: 'invalid cards' }, status: :unprocessable_entity and return
     end
+
     # handle HTML request
     unless cards.is_a?(Array)
       web_flag = 1
@@ -101,7 +102,7 @@ class PokersController < ApplicationController
 
     if web_flag == 0
       # print("result test: ",result,"\n")
-      result=formating_response(result)
+      result = formating_response(result)
       result_obj = { "result": result }
       render json: result_obj
     end
@@ -315,22 +316,16 @@ class PokersController < ApplicationController
     # obj: List[card_obj]
     # card_obj: Dict{"card":str, "score":int,"score2":[int], "best":bool, "hand":str}
     obj.each do |card_obj|
-      if card_obj.has_key?("score")
-        card_obj.delete("score")
-      end
-      if card_obj.has_key?("score2")
-        card_obj.delete("score2")
-      end
-      if card_obj.has_key?("score")
-        card_obj.delete("score")
-      end      
+      card_obj.delete('score') if card_obj.has_key?('score')
+      card_obj.delete('score2') if card_obj.has_key?('score2')
+      card_obj.delete('score') if card_obj.has_key?('score')
     end
   end
 
   def route_not_found
-    print("damnnnnn boy")
+    print('damnnnnn boy')
     respond_to do |format|
-      format.json { render json: { error: "not_found" }, status: :not_found }
+      format.json { render json: { error: 'not_found' }, status: :not_found }
       format.html { render file: "#{Rails.root}/public/404.html", status: :not_found, layout: false }
       format.any  { head :not_found }
     end
@@ -361,8 +356,7 @@ class PokersController < ApplicationController
       wrong_flag = false
       card = item.split(' ')
       # card = List[str]
-      
-    
+
       # modify the hand array
       for i in 0..(card.length - 1)
         card[i] = [card[i][0], card[i][1..-1].to_i]
@@ -390,13 +384,13 @@ class PokersController < ApplicationController
       card.each do |single_card|
         # invalid suit
         unless az_set.include?(single_card[0])
-          result.push([item, 'Invalid suit: '+single_card[0]+single_card[1].to_s])
+          result.push([item, 'Invalid suit: ' + single_card[0] + single_card[1].to_s])
           wrong_flag = true
           break
         end
         # invalid number
         unless num_set.include?(single_card[1])
-          result.push([item, 'Invalid number: '+single_card[0]+single_card[1].to_s])
+          result.push([item, 'Invalid number: ' + single_card[0] + single_card[1].to_s])
           wrong_flag = true
           break
         end
@@ -423,18 +417,18 @@ class PokersController < ApplicationController
   end
 
   def validate_content_type
-    unless ['application/x-www-form-urlencoded', 'multipart/form-data', 'application/json'].include?(request.content_type)
+    unless ['application/x-www-form-urlencoded', 'multipart/form-data',
+            'application/json'].include?(request.content_type)
       if request.content_type == 'application/json'
-        render json: { error: "The provided content-type '#{request.content_type}' is not supported." }, status: :unsupported_media_type
+        render json: { error: "The provided content-type '#{request.content_type}' is not supported." },
+               status: :unsupported_media_type
       elsif request.content_type == 'text/plain'
-        render json: { error: "The provided content-type 'text/plain' is not supported." }, status: :unsupported_media_type
+        render json: { error: "The provided content-type 'text/plain' is not supported." },
+               status: :unsupported_media_type
       else
         flash[:error] = "The provided content-type '#{request.content_type}' is not supported."
         redirect_to root_path and return
       end
     end
   end
-
-
-
 end
