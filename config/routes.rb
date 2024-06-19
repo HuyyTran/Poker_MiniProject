@@ -13,4 +13,7 @@ Rails.application.routes.draw do
 
   # API
   post '/pokers/api/v1/cards/check', to: 'pokers#check'
+
+  # Unauthorized HTTP methods
+  match '*unmatched', to: 'pokers#route_not_found', via: :all
 end

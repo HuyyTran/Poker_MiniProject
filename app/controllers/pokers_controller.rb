@@ -2,7 +2,10 @@ require 'set'
 
 class PokersController < ApplicationController
   protect_from_forgery with: :null_session, only: :check
-  @err = 0
+  
+  before_action :validate_content_type, only: :check
+
+  # rescue_from ActionController::UnknownHttpMethod, with: :handle_unsupported_http_method
 
   def index
     @pokers = PokerCombination.all
@@ -21,6 +24,10 @@ class PokersController < ApplicationController
   def check
     web_flag = 0
     cards = params[:cards] # cards: List[str]
+    # Validate if cards parameter is a string or an array of strings
+    unless cards.is_a?(String) || (cards.is_a?(Array) && cards.all? { |c| c.is_a?(String) })
+      render json: { error: "invalid cards" }, status: :unprocessable_entity and return
+    end
     # handle HTML request
     unless cards.is_a?(Array)
       web_flag = 1
@@ -32,18 +39,6 @@ class PokersController < ApplicationController
     print('validated_card: ', validated_cards[0], ' ; ', validated_cards[1], "\n")
     # print("valid test: ",valid_cards(cards),"\n")
     # print("cards: ",cards,"\n")
-
-    # old version
-    # if err!=""
-    #   flash[:error] = err
-    #   if web_flag==0
-    #     err_obj={"error":err}
-    #     render json: err_obj
-    #     return
-    #   elsif web_flag==1
-    #     redirect_to action: :index and return
-    #   end
-    # end
 
     # now only need to handle the case error for web interface
     if validated_cards[1] and web_flag == 1
@@ -80,7 +75,7 @@ class PokersController < ApplicationController
     min = 9
     result_arr = [] # List[score2]=List[List[int]]
     result.each do |item|
-      next if item.has_key?('error')
+      next if item.has_key?('msg')
 
       if item['score'] == min
         result_arr.push(item['score2'])
@@ -105,6 +100,8 @@ class PokersController < ApplicationController
     end
 
     if web_flag == 0
+      # print("result test: ",result,"\n")
+      result=formating_response(result)
       result_obj = { "result": result }
       render json: result_obj
     end
@@ -119,7 +116,7 @@ class PokersController < ApplicationController
     single_result = {}
     single_result['card'] = card
     if err != 'none'
-      single_result['error'] = err
+      single_result['msg'] = err
       return single_result
     end
     array = card.split(' ')
@@ -313,6 +310,32 @@ class PokersController < ApplicationController
     single_result
   end
 
+  def formating_response(obj)
+    # mission: only keep card, hand, best. Delete all other attributes of card_obj
+    # obj: List[card_obj]
+    # card_obj: Dict{"card":str, "score":int,"score2":[int], "best":bool, "hand":str}
+    obj.each do |card_obj|
+      if card_obj.has_key?("score")
+        card_obj.delete("score")
+      end
+      if card_obj.has_key?("score2")
+        card_obj.delete("score2")
+      end
+      if card_obj.has_key?("score")
+        card_obj.delete("score")
+      end      
+    end
+  end
+
+  def route_not_found
+    print("damnnnnn boy")
+    respond_to do |format|
+      format.json { render json: { error: "not_found" }, status: :not_found }
+      format.html { render file: "#{Rails.root}/public/404.html", status: :not_found, layout: false }
+      format.any  { head :not_found }
+    end
+  end
+
   private
 
   def valid_cards(cards)
@@ -398,4 +421,20 @@ class PokersController < ApplicationController
     # print('valid test ', result, ' ', exist_err, "\n")
     [result, exist_err]
   end
+
+  def validate_content_type
+    unless ['application/x-www-form-urlencoded', 'multipart/form-data', 'application/json'].include?(request.content_type)
+      if request.content_type == 'application/json'
+        render json: { error: "The provided content-type '#{request.content_type}' is not supported." }, status: :unsupported_media_type
+      elsif request.content_type == 'text/plain'
+        render json: { error: "The provided content-type 'text/plain' is not supported." }, status: :unsupported_media_type
+      else
+        flash[:error] = "The provided content-type '#{request.content_type}' is not supported."
+        redirect_to root_path and return
+      end
+    end
+  end
+
+
+
 end
