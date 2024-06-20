@@ -1,7 +1,7 @@
 require 'rails_helper'
 require 'support/shared_examples_for_pokers'
 
-RSpec.describe PokersController, type: :controller do
+RSpec.describe WebPokersController, type: :controller do
   describe 'GET #index' do
     it 'renders the index template' do
       get :index

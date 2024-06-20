@@ -244,6 +244,7 @@ class PokersController < ApplicationController
       end
     end
 
+
     case result
     when HAND[:straight_flush]
       hand = 'straight flush'

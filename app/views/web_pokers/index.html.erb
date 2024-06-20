@@ -1,0 +1,17 @@
+<h1>Check a Poker Hand</h1>
+
+<form action="/pokers/check" accept-charset="UTF-8" method="post">
+    <input type="text" name="cards" id="cards">
+    <input type="submit" name="commit" value="Check" data>
+</form>
+
+
+<% if @result %>
+    <p><%= @result %></p>
+<% end %>
+
+<% if flash[:error] %>
+  <div class="alert alert-danger">
+    <%= flash[:error] %>
+  </div>
+<% end %>
