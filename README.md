@@ -68,15 +68,15 @@ The application will be accessible at http://localhost:3000.
 Example Response:
 
 
-{
-    "result": [
-        {
-            "card": "H1 S10 D11 C12 C13",
-            "best": true,
-            "hand": "straight"
-        }
-    ]
-}
+    {
+        "result": [
+            {
+                "card": "H1 S10 D11 C12 C13",
+                "best": true,
+                "hand": "straight"
+            }
+        ]
+    }
 
 ## Testing
 ### Run Tests
