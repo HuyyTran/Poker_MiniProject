@@ -16,48 +16,6 @@ module PokerCommon
         one_pair: 8,
         high_card: 9
       }.freeze
-    
-
-
-    # def check
-    #     web_flag = 0
-    #     cards = params[:cards] # cards: List[str]
-    #     # Validate if cards parameter is a string or an array of strings
-    #     unless cards.is_a?(String) || (cards.is_a?(Array) && cards.all? { |c| c.is_a?(String) })
-    #         render json: { error: 'invalid cards' }, status: :unprocessable_entity and return
-    #     end
-
-    #     # handle HTML request
-    #     unless cards.is_a?(Array)
-    #         web_flag = 1
-    #         cards = cards.split(',')
-    #     end
-
-    #     # Validate cards
-    #     validated_cards = valid_cards(cards)
-    #     print('validated_card: ', validated_cards[0], ' ; ', validated_cards[1], "\n")
-    #     # print("valid test: ",valid_cards(cards),"\n")
-    #     # print("cards: ",cards,"\n")
-
-    #     # now only need to handle the case error for web interface
-    #     if validated_cards[1] and web_flag == 1
-    #         # print('test print: ', validated_cards, "\n")
-    #         flash[:error] = validated_cards[0][0][1]
-    #         redirect_to action: :index and return
-    #     end
-    #     print(cards)
-    #     # result=check_all_hands(cards,web_flag)
-    #     result = check_all_hands(validated_cards[0], web_flag)
-    #     # print("result: ",@result,"\n")
-    #     return unless web_flag == 1
-
-    #     # flash[:result] = "Card: "+result['card']+" =>> Hand: "+result['hand']
-    #     flash[:result] = result['hand']
-    #     print('flash[:result]: ', flash[:result], "\n")
-    #     redirect_to action: :index
-
-    #     # render 'index'
-    # end
 
     def check_all_hands(cards, web_flag)
         # cards: List[tuple(card: str, err:str)]
@@ -84,12 +42,9 @@ module PokerCommon
             result_arr.push(item['score2'])
             end
         end
-        # print("result_arr: ",result_arr)
 
         # 2. 2nd filter: choose the best hand in result_arr base on score2
         best_score = result_arr.max # List[int]
-        # print("best: ",best_score)
-
         # set best=true to the best hand(s)
         result.each do |item|
             if item['score2'] == best_score and item['score'] == min
@@ -99,7 +54,6 @@ module PokerCommon
         end
 
         if web_flag == 0
-            # print("result test: ",result,"\n")
             result = formating_response(result)
             result_obj = { "result": result }
             render json: result_obj
@@ -108,7 +62,6 @@ module PokerCommon
     end
 
     def check_poker_hand(card, err)
-        # use later for checking
         one_pair_num = -1
         # card: str
         # return single_resutl: Dict{cards:str,score:int,score2:List[int],best:bool,hand:str} ->Card_obj
@@ -130,7 +83,6 @@ module PokerCommon
         array = array.sort { |a, b| a[1] <=> b[1] }
         # single_result['modified_card']=array
         # array: List[tuple[suit,number]]. ex: array = [['H',1],['H',10],['H',11],['H',12],['H',13]]. This array is already sorted in ascending order.
-        # print(az_set)
         print(array, "\n")
         # flag_hash: Dict. -> to check card is in which type.
         flag_hash = {}
@@ -186,8 +138,6 @@ module PokerCommon
             break
             end
         end
-
-        # ace-high special case:1-10-11-12-13 (ignore this case)
         # ace-low special case: 2-3-4-5-14. Turn into 1-2-3-4-5
         if array[0][1] == 2 and array[1][1] == 3 and array[2][1] == 4 and array[3][1] == 5 and array[4][1] == 14
             straight_flag = true
@@ -343,11 +293,8 @@ module PokerCommon
         result = [] # result : List [tuple(card:str, err:str)]
         # nil input
         if cards == [''] || cards.empty?
-            # return "input is nil"
-            # result.push(["","input is nil"])
             cards = ['']
             exist_err = true
-            # return [[["","input is nil"]],true]
         end
 
         repeat_set = Set.new
@@ -355,22 +302,18 @@ module PokerCommon
             wrong_flag = false
             card = item.split(' ')
             # card = List[str]
-
             # modify the hand array
             for i in 0..(card.length - 1)
             card[i] = [card[i][0], card[i][1..-1].to_i]
             end
-
             # card=List[tuple(suit:str, number: int)]
             # nil input
-
             if item == ''
             result.push([item, 'input is nil'])
             wrong_flag = true
             exist_err = true
             next
             end
-
             # invalid card's length
             if card.length != 5
             result.push([item, "Invalid card's length"])
